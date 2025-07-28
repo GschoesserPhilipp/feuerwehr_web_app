@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuerwehr Zeitmessungen</title>
+
+    <!-- Bootstrap & DataTables CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+</head>
+<body>
+
+{% include 'navbar.html' %}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">Übersicht der Zeitmessungen</h2>
+    <div class="table-responsive">
+        <table id="measurementTable" class="table table-striped table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th>Datum</th>
+                <th>Zeit</th>
+                <th>Zeim mit Fehlern</th>
+                <th>Fehler</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for measure in measurements %}
+            <tr>
+                <td>{{ measure.datetime }}</td>
+                <td>{{ measure.time }}</td>
+                <td>{{measure.time_with_errors}}</td>
+                <td>
+                    <div class="row d-flex align-items-center">
+                        <div class="col">
+                            Gesamt: <strong>{{ measure.total_errors }}</strong>
+                        </div>
+                        <div class="col text-end">
+                            <button class="btn btn-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#errorModal"
+                                    onclick="loadErrorDetails('{{ measure.id }}')">
+                                Details
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Fehlerdetails</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Fehlerdetails werden hier dynamisch eingefügt -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap + DataTables Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<!-- DataTable & Fehlerdaten Logik -->
+<script>
+    $(document).ready(function () {
+        $('#measurementTable').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/de-DE.json"
+            },
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            pageLength: 10,
+            order: [[0, "desc"]]
+        });
+    });
+
+    // Backend-Daten als JSON einbinden
+    const measurements = JSON.parse('{{ measurements | tojson | safe }}');
+
+    function loadErrorDetails(measurementId) {
+        const m = measurements.find(item => item.id === Number(measurementId));
+        const modal = document.getElementById("modalContent");
+
+        if (!m) {
+            modal.innerHTML = "Fehlerdaten nicht gefunden.";
+            return;
+        }
+
+        const html = m.error_details
+            .filter(e => e.count > 0)
+            .map(e => `<p><strong>${e.name}</strong>: ${e.count}</p>`)
+            .join("");
+
+        modal.innerHTML = html || "Keine Fehler gefunden.";
+    }
+</script>
+
+</body>
+</html>
