@@ -1,13 +1,13 @@
 import os
 from datetime import timedelta, datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
-    get_jwt_identity, set_access_cookies, unset_jwt_cookies, current_user
+    get_jwt_identity, set_access_cookies, unset_jwt_cookies
 )
 from flask_jwt_extended.exceptions import NoAuthorizationError
 from dotenv import load_dotenv
-from models import User, db, ErrorList, ErrorHistory
+from .models import User, db, ErrorList, ErrorHistory
 
 load_dotenv()
 
@@ -121,6 +121,40 @@ def table_view():
 
 ############################################### API ###############################################################
 
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    user = User.query.filter_by(username=username).first()
+    if not user or not user.check_password(password):
+        return jsonify({"error": "Login failed"}), 401
+
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify(access_token=access_token)
+
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "Username und Passwort sind erforderlich"}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": "Benutzername existiert bereits"}), 409
+
+    new_user = User(username=username, is_admin=False)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"msg": "Benutzer erfolgreich registriert"}), 201
+
+
 @app.route('/api/new-error', methods=['POST'])
 @jwt_required()
 def add_error_history():
@@ -210,14 +244,20 @@ def user_list():
     users = User.query.with_entities(User.username).filter_by(is_admin=False).all()
     return jsonify([user.username for user in users])
 
+@app.route("/api/docs")
+def docs():
+    return app.send_static_file("swagger.html")
 
 @app.errorhandler(NoAuthorizationError)
 def handle_missing_token(e):
-    flash("Bitte zuerst einloggen")
     return redirect(url_for('login'))
 
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    response = make_response(redirect(url_for("login")))
+    unset_jwt_cookies(response)
+    return response
 
 @app.errorhandler(401)
 def handle_unauthorized(e):
-    flash("Nicht autorisiert – bitte einloggen")
     return redirect(url_for('login'))

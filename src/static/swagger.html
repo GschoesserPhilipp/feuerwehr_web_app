@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Feuerwehr API Dokumentation</title>
+  <link href="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  <script>
+    window.onload = function() {
+      const spec = {
+        "openapi": "3.0.3",
+        "info": {
+          "title": "Feuerwehr API",
+          "version": "1.0.0",
+          "description": "API für Login, Registrierung und Fehlerhistorie"
+        },
+        "components": {
+          "securitySchemes": {
+            "bearerAuth": {
+              "type": "http",
+              "scheme": "bearer",
+              "bearerFormat": "JWT"
+            }
+          },
+          "schemas": {
+            "UserLogin": {
+              "type": "object",
+              "required": ["username", "password"],
+              "properties": {
+                "username": { "type": "string", "example": "user1" },
+                "password": { "type": "string", "example": "secret123" }
+              }
+            },
+            "UserRegister": {
+              "type": "object",
+              "required": ["username", "password"],
+              "properties": {
+                "username": { "type": "string", "example": "user1" },
+                "password": { "type": "string", "example": "secret123" }
+              }
+            },
+            "ErrorEntry": {
+              "type": "object",
+              "required": ["time"],
+              "properties": {
+                "time": { "type": "number", "example": 12.5 }
+              }
+            }
+          }
+        },
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "paths": {
+          "/api/login": {
+            "post": {
+              "summary": "Login",
+              "tags": ["Auth"],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": { "$ref": "#/components/schemas/UserLogin" }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "JWT Access Token",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "access_token": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                },
+                "401": { "description": "Login fehlgeschlagen" }
+              }
+            }
+          },
+          "/api/register": {
+            "post": {
+              "summary": "Registrierung",
+              "tags": ["Auth"],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": { "$ref": "#/components/schemas/UserRegister" }
+                  }
+                }
+              },
+              "responses": {
+                "201": { "description": "Benutzer registriert" },
+                "400": { "description": "Ungültige Daten" },
+                "409": { "description": "Benutzername existiert bereits" }
+              }
+            }
+          },
+          "/api/new-error": {
+            "post": {
+              "summary": "Fehlerdaten einreichen",
+              "tags": ["Fehler"],
+              "security": [{ "bearerAuth": [] }],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "allOf": [
+                        { "$ref": "#/components/schemas/ErrorEntry" },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "error_1": { "type": "integer" },
+                            "error_2": { "type": "integer" },
+                            "error_3": { "type": "integer" },
+                            "error_4": { "type": "integer" },
+                            "error_5": { "type": "integer" },
+                            "error_6": { "type": "integer" },
+                            "error_7": { "type": "integer" },
+                            "error_8": { "type": "integer" },
+                            "error_9": { "type": "integer" },
+                            "error_10": { "type": "integer" },
+                            "error_11": { "type": "integer" },
+                            "error_12": { "type": "integer" },
+                            "error_13": { "type": "integer" },
+                            "error_14": { "type": "integer" },
+                            "error_15": { "type": "integer" },
+                            "error_16": { "type": "integer" }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "201": {
+                  "description": "Eintrag erfolgreich hinzugefügt",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "msg": { "type": "string", "example": "Eintrag erfolgreich hinzugefügt" }
+                        }
+                      }
+                    }
+                  }
+                },
+                "400": { "description": "Fehlendes Feld" }
+              }
+            }
+          },
+          "/api/error-history": {
+            "get": {
+              "summary": "Fehlerhistorie abrufen",
+              "tags": ["Fehler"],
+              "security": [{ "bearerAuth": [] }],
+              "responses": {
+                "200": {
+                  "description": "Liste der Fehlerhistorie",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "timestamp": { "type": "string" },
+                            "time": { "type": "number" },
+                            "time_with_errors": { "type": "number" },
+                            "errors": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "integer" },
+                                  "count": { "type": "integer" },
+                                  "text": { "type": "string" }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "404": { "description": "Benutzer nicht gefunden" }
+              }
+            }
+          },
+          "/api/error-list": {
+            "get": {
+              "summary": "Fehlerdefinitionen abrufen",
+              "tags": ["Fehler"],
+              "security": [{ "bearerAuth": [] }],
+              "responses": {
+                "200": {
+                  "description": "Liste der Fehlerarten",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "integer" },
+                            "error_text": { "type": "string" },
+                            "time": { "type": "number" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/user-list": {
+            "get": {
+              "summary": "Benutzerliste abrufen",
+              "tags": ["Benutzer"],
+              "security": [{ "bearerAuth": [] }],
+              "responses": {
+                "200": {
+                  "description": "Liste von Benutzernamen",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      SwaggerUIBundle({
+        spec: spec,
+        dom_id: '#swagger-ui',
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout"
+      });
+    };
+  </script>
+</body>
+</html>
