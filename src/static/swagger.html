@@ -46,7 +46,24 @@
               "type": "object",
               "required": ["time"],
               "properties": {
-                "time": { "type": "number", "example": 12.5 }
+                "time": { "type": "number", "example": 12.5 },
+                "group_name": { "type": "string", "example": "group-1" },
+                 "error_1": { "type": "integer" },
+                "error_2": { "type": "integer" },
+                "error_3": { "type": "integer" },
+                "error_4": { "type": "integer" },
+                "error_5": { "type": "integer" },
+                "error_6": { "type": "integer" },
+                "error_7": { "type": "integer" },
+                "error_8": { "type": "integer" },
+                "error_9": { "type": "integer" },
+                "error_10": { "type": "integer" },
+                "error_11": { "type": "integer" },
+                "error_12": { "type": "integer" },
+                "error_13": { "type": "integer" },
+                "error_14": { "type": "integer" },
+                "error_15": { "type": "integer" },
+                "error_16": { "type": "integer" }
               }
             }
           }
@@ -115,28 +132,8 @@
                   "application/json": {
                     "schema": {
                       "allOf": [
-                        { "$ref": "#/components/schemas/ErrorEntry" },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "error_1": { "type": "integer" },
-                            "error_2": { "type": "integer" },
-                            "error_3": { "type": "integer" },
-                            "error_4": { "type": "integer" },
-                            "error_5": { "type": "integer" },
-                            "error_6": { "type": "integer" },
-                            "error_7": { "type": "integer" },
-                            "error_8": { "type": "integer" },
-                            "error_9": { "type": "integer" },
-                            "error_10": { "type": "integer" },
-                            "error_11": { "type": "integer" },
-                            "error_12": { "type": "integer" },
-                            "error_13": { "type": "integer" },
-                            "error_14": { "type": "integer" },
-                            "error_15": { "type": "integer" },
-                            "error_16": { "type": "integer" }
-                          }
-                        }
+                        { "$ref": "#/components/schemas/ErrorEntry" }
+
                       ]
                     }
                   }

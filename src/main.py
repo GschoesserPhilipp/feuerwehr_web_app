@@ -18,7 +18,7 @@ app.secret_key = os.getenv("JWT_SECRET_KEY")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
-app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']
 app.config['JWT_ACCESS_COOKIE_PATH'] = '/'
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=48)
@@ -159,8 +159,6 @@ def api_register():
 @jwt_required()
 def add_error_history():
     data = request.get_json()
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
 
     error_definitions = {e.id: e.time for e in ErrorList.query.all()}
     error_sum = 0
@@ -178,7 +176,7 @@ def add_error_history():
 
     try:
         entry = ErrorHistory(
-            group_name=user.username,
+            group_name=data["group_name"],
             timestamp=datetime.now(),
             time=data["time"],
             time_with_errors=time_with_errors,
@@ -248,16 +246,25 @@ def user_list():
 def docs():
     return app.send_static_file("swagger.html")
 
+def is_api_request():
+    return request.path.startswith("/api/") or request.accept_mimetypes.best == 'application/json'
+
 @app.errorhandler(NoAuthorizationError)
 def handle_missing_token(e):
+    if is_api_request():
+        return jsonify({"error": "Token fehlt"}), 401
     return redirect(url_for('login'))
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
+    if is_api_request():
+        return jsonify({"error": "Token abgelaufen"}), 401
     response = make_response(redirect(url_for("login")))
     unset_jwt_cookies(response)
     return response
 
 @app.errorhandler(401)
 def handle_unauthorized(e):
+    if is_api_request():
+        return jsonify({"error": "Nicht autorisiert"}), 401
     return redirect(url_for('login'))
