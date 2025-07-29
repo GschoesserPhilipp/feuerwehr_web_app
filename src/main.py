@@ -204,6 +204,13 @@ def error_list():
         for e in errors
     ])
 
+@app.route('/api/user-list')
+@jwt_required()
+def user_list():
+    users = User.query.with_entities(User.username).filter_by(is_admin=False).all()
+    return jsonify([user.username for user in users])
+
+
 @app.errorhandler(NoAuthorizationError)
 def handle_missing_token(e):
     flash("Bitte zuerst einloggen")
