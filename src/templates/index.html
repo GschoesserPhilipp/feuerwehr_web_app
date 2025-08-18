@@ -23,18 +23,21 @@
                     <thead class="table-dark">
                     <tr>
                         <th>Gruppe</th>
-                        <th>Zeit (s)</th>
+                        <th>Zeit</th>
+                        <th>Zeit mit Fehler</th>
                         <th>Datum</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {% for entry in top_entries %}
-                        <tr>
-                            <td>{{ entry.group_name }}</td>
-                            <td>{{ "%.2f"|format(entry.time) }}</td>
-                            <td>{{ entry.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
-                        </tr>
+                    {% for entry in top_data %}
+                    <tr>
+                        <td>{{ entry.group_name }}</td>
+                        <td>{{ entry.time }}</td>
+                        <td>{{ entry.time_with_errors }}</td>
+                        <td>{{ entry.timestamp }}</td>
+                    </tr>
                     {% endfor %}
+
                     </tbody>
                 </table>
             </div>
@@ -70,7 +73,7 @@
             type: 'date'
         },
         yaxis: {
-            title: 'Zeit (Sekunden)',
+            title: 'Zeit',
             rangemode: 'tozero'
         },
         showlegend: true,

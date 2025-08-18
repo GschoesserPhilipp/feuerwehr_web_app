@@ -14,12 +14,13 @@
 {% include 'navbar.html' %}
 
 <div class="container mt-4">
-    <h2 class="mb-4 text-center">Übersicht der Zeitmessungen</h2>
+    <h2 class="mb-4 text-center">Detail Übersicht der Zeitmessungen</h2>
     <div class="table-responsive">
         <table id="measurementTable" class="table table-striped table-hover">
             <thead class="table-dark">
             <tr>
                 <th>Datum</th>
+                <th>Gruppe</th>
                 <th>Zeit</th>
                 <th>Zeim mit Fehlern</th>
                 <th>Fehler</th>
@@ -29,8 +30,9 @@
             {% for measure in measurements %}
             <tr>
                 <td>{{ measure.datetime }}</td>
+                <td>{{ measure.group_name }}</td>
                 <td>{{ measure.time }}</td>
-                <td>{{measure.time_with_errors}}</td>
+                <td>{{ measure.time_with_errors }}</td>
                 <td>
                     <div class="row d-flex align-items-center">
                         <div class="col">

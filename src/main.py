@@ -26,14 +26,29 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=48)
 db.init_app(app)
 jwt = JWTManager(app)
 
+def format_time(ms):
+    m = int(ms // 60000)
+    s = int((ms % 60000) // 1000)
+    c = int((ms % 1000) // 10)
+    return f"{m:02d}:{s:02d}:{c:02d}"
+
 @app.route('/')
 @jwt_required()
 def index():
 
-    top_entries = ErrorHistory.query.order_by(ErrorHistory.time.asc()).limit(10).all()
+    top_entries = ErrorHistory.query.order_by(ErrorHistory.time_with_errors.asc()).limit(10).all()
     all_entries = ErrorHistory.query.order_by(ErrorHistory.timestamp.asc()).all()
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+
+    top_data = []
+    for entry in top_entries:
+        top_data.append({
+            "group_name": entry.group_name,
+            "time": format_time(entry.time),
+            "time_with_errors": format_time(entry.time_with_errors),
+            "timestamp": entry.timestamp.strftime('%d.%m.%Y %H:%M')
+        })
 
     grouped_data = {}
     for entry in all_entries:
@@ -41,9 +56,10 @@ def index():
         if group not in grouped_data:
             grouped_data[group] = {"timestamps": [], "times": []}
         grouped_data[group]["timestamps"].append(entry.timestamp.strftime('%Y-%m-%d %H:%M'))
-        grouped_data[group]["times"].append(entry.time)
+        formatted_time = format_time(entry.time_with_errors)
+        grouped_data[group]["times"].append(formatted_time)
 
-    return render_template('index.html', top_entries=top_entries, grouped_data=grouped_data, current_user=user)
+    return render_template('index.html', top_data=top_data, grouped_data=grouped_data, current_user=user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -92,7 +108,7 @@ def table_view():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
-    history_entries = ErrorHistory.query.filter_by(group_name=user.username).order_by(ErrorHistory.timestamp.desc()).all()
+    history_entries = ErrorHistory.query.order_by(ErrorHistory.timestamp.desc()).all()
     error_texts = {e.id: e.error_text for e in ErrorList.query.all()}
 
     measurements = []
@@ -110,8 +126,9 @@ def table_view():
         measurements.append({
             "id": entry.id,
             "datetime": entry.timestamp.strftime("%d.%m.%Y %H:%M"),
-            "time": entry.time,
-            "time_with_errors": entry.time_with_errors,
+            "group_name": entry.group_name,
+            "time": format_time(entry.time),
+            "time_with_errors": format_time(entry.time_with_errors),
             "total_errors": total_errors,
             "error_details": error_details
         })
@@ -160,6 +177,8 @@ def api_register():
 def add_error_history():
     data = request.get_json()
 
+    if not data.get("group_name") or not data.get("time") or data.get("time") == 0:
+        return jsonify({"error": "nicht alle Daten vorhanden"}), 400
     error_definitions = {e.id: e.time for e in ErrorList.query.all()}
     error_sum = 0
     error_data = {}
@@ -215,8 +234,8 @@ def get_error_history():
 
         result.append({
             "timestamp": entry.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-            "time": entry.time,
-            "time_with_errors": entry.time_with_errors,
+            "time": format_time(entry.time),
+            "time_with_errors": format_time(entry.time_with_errors),
             "errors": error_list
         })
 
